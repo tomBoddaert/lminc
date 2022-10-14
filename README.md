@@ -1,3 +1,6 @@
+[![Rust](https://github.com/tomBoddaert/lminc/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/tomBoddaert/lminc/actions/workflows/rust.yml)
+&nbsp; [![rust-clippy analyze](https://github.com/tomBoddaert/lminc/actions/workflows/rust-clippy.yml/badge.svg?event=push)](https://github.com/tomBoddaert/lminc/actions/workflows/rust-clippy.yml)
+
 # LMinC
 
 ### This is an assembler and simulator for the Little Minion Computer and Little Man Computer.
