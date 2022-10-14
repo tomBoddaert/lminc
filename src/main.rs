@@ -26,6 +26,9 @@ Subcommands:
     runNumbers <path>
         Assemble the numbers from the input and run it
 
+    memDump <path>
+        Read the memory from a binary file and print it out
+
     author
         Information about the author
 "
@@ -161,6 +164,19 @@ pub fn main() -> Result<(), String> {
                 if let Err(err) = runner::run(&mut computer) {
                     println!("{err}");
                 }
+            }
+            "memDump" => {
+                // If there are not enough arguments, error
+                check_arguments!(3, "Usage: '{} memDump <path>'");
+
+                // Read the memory from the file
+                let memory: [u16; 100] = match loader::read_from_file(&args[2]) {
+                    Ok(Ok(memory_from_file)) => memory_from_file,
+                    Ok(Err(err)) => return Err(err.to_string()),
+                    Err(err) => return Err(err.to_string()),
+                };
+
+                println!("{memory:?}");
             }
             "author" => {
                 print!(AUTHOR_TEXT!());

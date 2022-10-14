@@ -10,6 +10,8 @@ pub enum Error {
     InvalidInstruction(usize, String),
     ExcessWords(usize, String),
     NoInstruction(usize),
+    InvalidVariable(usize, String),
+    InvalidAddress(usize, String),
     MultipleAssignment(usize, String),
     ExpectedAddress(usize),
     ExpectedNumber(usize),
@@ -25,12 +27,14 @@ impl std::fmt::Display for Error {
         match self {
             TooManyLines => write!(f, "The input file has too many lines of instructions (>100)!")?,
             MultipleInstructions(i, inst) => write!(f, "Instruction line {i} has multiple instructions ('{inst}')!")?,
-            InvalidInstruction(i, inst) => write!(f, "The instruction '{inst}' on line {i} is invalid!")?,
+            InvalidInstruction(i, inst) => write!(f, "The instruction '{inst}' on instruction/number line {i} is invalid!")?,
             ExcessWords(i, word) => write!(f, "Instruction line {i} has too many words ('{word}')!")?,
             NoInstruction(i) => write!(f, "Instruction line {i} has no instruction!")?,
+            InvalidVariable(i, var) => write!(f, "The address variable '{var}' on instruction line {i} is invalid!")?,
+            InvalidAddress(i, num) => write!(f, "The address '{num}' on instruction line {i} is invalid!")?,
             MultipleAssignment(i, variable) => write!(f, "The variable address of '{variable}' has already been set (instruction line {i})!")?,
             ExpectedAddress(i) => write!(f, "An address variable was expected on instruction line {i}!")?,
-            ExpectedNumber(i) => write!(f, "A number was expected on instruction line {i}!")?,
+            ExpectedNumber(i) => write!(f, "A number was expected on number line {i}!")?,
             InvalidNumber(i, num) => write!(f, "The number '{num}' on instruction line {i} is invalid!")?,
             UnexpectedAddress(i, variable) => write!(f, "The address variable '{variable}' on instruction line {i} was not expected!")?,
             TooManyVariables(i, variable) => write!(f, "The input file contains too many variables (variable '{variable}', instruction line {i})!")?
@@ -41,8 +45,9 @@ impl std::fmt::Display for Error {
 }
 
 lazy_static! {
-    static ref ASSEMBLY_REGEX: Regex = Regex::new(r"(?:^|\n)[ \ta-zA-Z\d_]+").unwrap();
     static ref NUMBER_REGEX: Regex = Regex::new(r"(?:^|\n)[ \t\d]+").unwrap();
+    static ref ASSEMBLY_REGEX: Regex = Regex::new(r"(?:^|\n)[ \ta-zA-Z\d_]+").unwrap();
+    static ref DECIMAL_NUMBER: Regex = Regex::new(r"^\d+$").unwrap();
 }
 
 /// Takes a &str with instructions as 3 digit numbers, seperated by
@@ -151,6 +156,7 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 if inst_opt != None {
                     return Err(Error::MultipleInstructions(i + 1, word.to_owned()));
                 }
+
                 inst_opt = Some(word);
             } else {
                 // If the instruction is not set, assume this is a line_var, error if there already is one
@@ -181,6 +187,10 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
 
         // If there is a line_var, set it
         if let Some(var) = line_var {
+            if DECIMAL_NUMBER.is_match(var) {
+                return Err(Error::InvalidVariable(i + 1, var.to_owned()))
+            }
+            
             if variables.contains_key(&var) {
                 return Err(Error::MultipleAssignment(i + 1, var.to_owned()));
             }
@@ -211,22 +221,36 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                         _ => 000,
                     };
 
-                    // Add the address from the address variable, creating one if it does not exist
-                    if let Some(addr) = variables.get(var) {
-                        memory[i] = opcode + *addr as u16;
+                    // Get the address from the address variable, if it's not a number and creating one if it does not exist
+                    // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
+                    let addr: u16 = if DECIMAL_NUMBER.is_match(var) {
+                        // Parse the text as a number, checking if it is out of bounds
+                        if let Ok(var_addr) = var.parse::<u16>() {
+                            if var_addr > 99 {
+                                return Err(Error::InvalidAddress(i + 1, var.to_owned()));
+                            }
+
+                            var_addr
+                        } else {
+                            return Err(Error::InvalidAddress(i + 1, var.to_owned()));
+                        }
+                    } else if let Some(&var_addr) = variables.get(var) {
+                        var_addr as u16
                     } else {
                         // Get the next avaliable memory address, checking if it is out of bounds
-                        let addr = code.len() + variables_number;
-                        if addr > 99 {
+                        let var_addr = code.len() + variables_number;
+                        if var_addr > 99 {
                             return Err(Error::TooManyVariables(i + 1, var.to_owned()));
                         }
 
                         // Set the variable
-                        variables.insert(var, addr);
+                        variables.insert(var, var_addr);
                         variables_number += 1;
 
-                        memory[i] = opcode + addr as u16;
-                    }
+                        var_addr as u16
+                    };
+
+                    memory[i] = opcode + addr as u16;
                 } else {
                     return Err(Error::ExpectedAddress(i + 1));
                 }
@@ -299,12 +323,13 @@ mod test {
         let assembly = include_str!("fib.txt");
         let memory = assemble_from_assembly(assembly).unwrap();
         let expected_memory: [u16; 100] = [
-            512, 113, 902, 315, 513, 312, 515, 313, 514, 215, 800, 000, 000, 001, 100, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            512, 113, 902, 315, 513, 312, 515, 313, 514, 215, 800, 000, 000, 001, 100, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000,
         ];
 
         assert!(
@@ -314,6 +339,29 @@ mod test {
                 .all(|(number, expected)| *number == expected),
             "Could not assemble Fibonacci!"
         );
+    }
+
+    #[test]
+    fn absolute_address_assembly() {
+        let assembly = include_str!("abs_addr.txt");
+        let memory = assemble_from_assembly(assembly).unwrap();
+        let expected_memory: [u16; 100] = [
+            509, 398, 109, 399, 598, 902, 599, 902, 000, 001, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000,
+        ];
+
+        assert!(
+            memory
+                .iter()
+                .zip(expected_memory)
+                .all(|(number, expected)| *number == expected),
+            "Could not assemble assembly with absolute address!"
+        )
     }
 
     #[test]
@@ -344,12 +392,13 @@ mod test {
         let memory = assemble_from_numbers(numbers).unwrap();
 
         let expected_memory: [u16; 100] = [
-            605, 000, 001, 000, 100, 501, 102, 902, 303, 502, 301, 503, 302, 204, 816, 605, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            605, 000, 001, 000, 100, 501, 102, 902, 303, 502, 301, 503, 302, 204, 816, 605,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000,
         ];
 
         assert!(
