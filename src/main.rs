@@ -54,7 +54,7 @@ macro_rules! read_and_assemble {
         // Assemble the file
         match $assemble(&contents) {
             Ok(memory) => memory,
-            Err(err) => return Err(format!("{:?}", err)),
+            Err(err) => return Err(err.to_string()),
         }
     }};
 }
@@ -120,19 +120,16 @@ pub fn main() -> Result<(), String> {
                 // Read the memory from the file
                 let memory: [u16; 100] = match loader::read_from_file(&args[2]) {
                     Ok(Ok(memory_from_file)) => memory_from_file,
-                    Ok(Err(err)) => return Err(format!("{:?}", err)),
+                    Ok(Err(err)) => return Err(err.to_string()),
                     Err(err) => return Err(err.to_string()),
                 };
 
                 // Initialise the computer
-                let mut computer = runner::Computer {
-                    memory,
-                    ..Default::default()
-                };
+                let mut computer = runner::Computer::new(memory);
 
                 // Run the computer
                 if let Err(err) = runner::run(&mut computer) {
-                    println!("{:?}", err);
+                    println!("{err}");
                 }
             }
             "runAssembly" => {
@@ -143,14 +140,11 @@ pub fn main() -> Result<(), String> {
                 let memory = read_and_assemble!(&args[2], assembler::assemble_from_assembly);
 
                 // Initialise the computer
-                let mut computer = runner::Computer {
-                    memory,
-                    ..Default::default()
-                };
+                let mut computer = runner::Computer::new(memory);
 
                 // Run the computer
                 if let Err(err) = runner::run(&mut computer) {
-                    println!("{:?}", err);
+                    println!("{err}");
                 }
             }
             "runNumbers" => {
@@ -161,14 +155,11 @@ pub fn main() -> Result<(), String> {
                 let memory = read_and_assemble!(&args[2], assembler::assemble_from_numbers);
 
                 // Initialise the computer
-                let mut computer = runner::Computer {
-                    memory,
-                    ..Default::default()
-                };
+                let mut computer = runner::Computer::new(memory);
 
                 // Run the computer
                 if let Err(err) = runner::run(&mut computer) {
-                    println!("{:?}", err);
+                    println!("{err}");
                 }
             }
             "author" => {

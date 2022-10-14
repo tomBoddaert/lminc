@@ -7,6 +7,19 @@ pub enum Error {
     NumberTooLarge(usize, u16),
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Error::*;
+        
+        match self {
+            FileTooLarge => write!(f, "The input file was too large (>100 numbers)!")?,
+            NumberTooLarge(i, num) => write!(f, "The number '{num}' in instruction {i} is too large (>999)!")?
+        }
+        
+        Ok(())
+    }
+}
+
 /// Write a memory instance to a file
 pub fn write_to_file(path: &str, memory: [u16; 100]) -> std::io::Result<()> {
     // Initialise the file buffer, byte index and bit offset
