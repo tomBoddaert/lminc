@@ -18,6 +18,28 @@ pub enum Error {
     TooManyVariables(usize, String),
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Error::*;
+        
+        match self {
+            TooManyLines => write!(f, "The input file has too many lines of instructions (>100)!")?,
+            MultipleInstructions(i, inst) => write!(f, "Instruction line {i} has multiple instructions ('{inst}')!")?,
+            InvalidInstruction(i, inst) => write!(f, "The instruction '{inst}' on line {i} is invalid!")?,
+            ExcessWords(i, word) => write!(f, "Instruction line {i} has too many words ('{word}')!")?,
+            NoInstruction(i) => write!(f, "Instruction line {i} has no instruction!")?,
+            MultipleAssignment(i, variable) => write!(f, "The variable address of '{variable}' has already been set (instruction line {i})!")?,
+            ExpectedAddress(i) => write!(f, "An address variable was expected on instruction line {i}!")?,
+            ExpectedNumber(i) => write!(f, "A number was expected on instruction line {i}!")?,
+            InvalidNumber(i, num) => write!(f, "The number '{num}' on instruction line {i} is invalid!")?,
+            UnexpectedAddress(i, variable) => write!(f, "The address variable '{variable}' on instruction line {i} was not expected!")?,
+            TooManyVariables(i, variable) => write!(f, "The input file contains too many variables (variable '{variable}', instruction line {i})!")?
+        }
+        
+        Ok(())
+    }
+}
+
 lazy_static! {
     static ref ASSEMBLY_REGEX: Regex = Regex::new(r"(?:^|\n)[ \ta-zA-Z\d_]+").unwrap();
     static ref NUMBER_REGEX: Regex = Regex::new(r"(?:^|\n)[ \t\d]+").unwrap();
@@ -320,7 +342,7 @@ mod test {
     fn fibonacci_numbers() {
         let numbers = include_str!("fib_num.txt");
         let memory = assemble_from_numbers(numbers).unwrap();
-        println!("{:?}", memory);
+
         let expected_memory: [u16; 100] = [
             605, 000, 001, 000, 100, 501, 102, 902, 303, 502, 301, 503, 302, 204, 816, 605, 000,
             000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,

@@ -9,22 +9,6 @@ pub struct Computer {
     pub negative_flag: bool,
 }
 
-/// The computer's state
-#[derive(Clone, Copy, Debug)]
-pub enum ComputerState {
-    Running,
-    Halted,
-    ReachedEnd,
-}
-
-/// Errors for the computer runtime
-#[derive(Clone, Copy, Debug)]
-pub enum ComputerError {
-    Done(ComputerState),
-    InvalidInstruction,
-    BadInput,
-}
-
 impl Default for Computer {
     fn default() -> Self {
         Self {
@@ -34,6 +18,59 @@ impl Default for Computer {
             register: 0,
             negative_flag: false,
         }
+    }
+}
+
+impl Computer {
+    pub fn new(memory: [u16; 100]) -> Self {
+        Self {
+            memory,
+            ..Self::default()
+        }
+    }
+}
+
+/// The computer's state
+#[derive(Clone, Copy, Debug)]
+pub enum ComputerState {
+    Running,
+    Halted,
+    ReachedEnd,
+}
+
+impl std::fmt::Display for ComputerState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use ComputerState::*;
+        
+        match self {
+            Running => write!(f, "is running")?,
+            Halted => write!(f, "has halted")?,
+            ReachedEnd => write!(f, "has reached the end of its memory")?
+        }
+        
+        Ok(())
+    }
+}
+
+/// Errors for the computer runtime
+#[derive(Clone, Copy, Debug)]
+pub enum ComputerError {
+    Done(ComputerState),
+    InvalidInstruction(u8, u16),
+    BadInput,
+}
+
+impl std::fmt::Display for ComputerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use ComputerError::*;
+        
+        match self {
+            Done(state) => write!(f, "The computer {state}!")?,
+            InvalidInstruction(i, instruction) => write!(f, "Instruction {i} ({instruction}) is invalid!")?,
+            BadInput => write!(f, "An invalid input was entered!")?
+        }
+        
+        Ok(())
     }
 }
 
@@ -155,7 +192,7 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
         _ => {
             // If the instruction is invalid, decrement the counter to stay on the instruction, set the state and error
             computer.counter -= 1;
-            return Err(ComputerError::InvalidInstruction);
+            return Err(ComputerError::InvalidInstruction(computer.counter, instruction));
         }
     }
 
@@ -177,10 +214,7 @@ mod test {
             000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
         ];
 
-        let mut computer = Computer {
-            memory,
-            ..Default::default()
-        };
+        let mut computer = Computer::new(memory);
         run(&mut computer).unwrap();
 
         let expected_memory = [
