@@ -25,6 +25,9 @@ The [Little Minion Computer](https://mjrbordewich.webspace.durham.ac.uk/lmc/) mo
 - There is an example of assembling and running from numbers in [examples/fibonacci_from_nums.rs](examples/fibonacci_from_nums.rs)
 - There is an example of saving and loading a computer's memory in [examples/save_and_load.rs](examples/save_and_load.rs)
 
+## Extended mode (unstable)
+I am working on an extended mode. The documentation is in [extended_mode.md](extended_mode.md).
+
 ## License
 [LMinC](https://github.com/tomBoddaert/lminc) © 2022 by [Tom Boddaert](https://tomboddaert.com/) is licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
 

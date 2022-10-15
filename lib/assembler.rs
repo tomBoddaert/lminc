@@ -107,9 +107,14 @@ macro_rules! instructionPatternWithoutAddress {
         "IN" | "INP" | "OUT" | "HLT"
     };
 }
+macro_rules! extendedInstructions {
+    () => {
+        "INA" | "OTA"
+    };
+}
 macro_rules! instructionPattern {
     () => {
-        instructionPatternWithAddress!() | instructionPatternWithoutAddress!() | "DAT"
+        instructionPatternWithAddress!() | instructionPatternWithoutAddress!() | "DAT" | extendedInstructions!()
     };
 }
 
@@ -283,6 +288,19 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                     }
                 } else {
                     return Err(Error::ExpectedNumber(i + 1));
+                }
+            }
+            "INA" | "OTA" if memory[0] == 10 => {
+                // Extended mode instructions
+                // If an address variable was provided, error
+                if let Some(var) = addr_var {
+                    return Err(Error::UnexpectedAddress(i + 1, var.to_owned()));
+                }
+
+                memory[i] = match inst {
+                    "INA" => 911,
+                    "OTA" => 912,
+                    _ => 000
                 }
             }
             _ => return Err(Error::InvalidInstruction(i + 1, inst.to_owned())),

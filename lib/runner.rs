@@ -7,6 +7,7 @@ pub struct Computer {
     pub counter: u8,
     pub register: u16,
     pub negative_flag: bool,
+    pub _extended_mode: bool
 }
 
 impl Default for Computer {
@@ -17,6 +18,7 @@ impl Default for Computer {
             counter: 0,
             register: 0,
             negative_flag: false,
+            _extended_mode: false
         }
     }
 }
@@ -112,6 +114,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
 
     // Execute the instruction
     match instruction / 100 {
+        0 if computer.counter == 1 && instruction == 10 => {
+            // If the first number is 010, enable extended mode
+            computer._extended_mode = true;
+
+        }
         0 => {
             // HALT
             computer.state = ComputerState::Halted;
@@ -187,6 +194,31 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                 // OUTPUT
                 println!("{}", computer.register);
             }
+            11 if computer._extended_mode => {
+                // ASCII INPUT (extended mode)
+                let mut input = String::new();
+                if match stdin().read_line(&mut input) {
+                    Ok(_) => {
+                        // Read a line and get the character code of the 
+                        if let Some(character) = input.chars().next() {
+                            computer.register = (character as u8) as u16;
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    Err(_) => true,
+                } {
+                    // Decrement counter to stay on same instruction and error
+                    computer.counter -= 1;
+                    return Err(ComputerError::BadInput);
+                }
+            }
+            12 if computer._extended_mode => {
+                // ASCII OUTPUT (extended mode)
+                print!("{}", (computer.register as u8) as char)
+            }
+
             _ => {}
         },
         _ => {

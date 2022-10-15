@@ -1,0 +1,19 @@
+DAT 010        # Set extended mode
+
+     INA       # Take input character
+     STO c     # Store it
+     IN        # Take an input number
+loop STO n     # Store it
+     LDA c     # Load the character
+     OTA       # Output the character
+     LDA n     # Load the counter
+     SUB one   # Subtract one
+     BRZ end   # If the counter is zero, stop
+     BR  loop  # Otherwise, loop
+
+end LDA nl     # Load nl
+    OTA        # Output nl
+    HLT        # Stop
+
+one  DAT 001   # Data: one = 1
+nl   DAT 010   # Data: nl  = '\n'
