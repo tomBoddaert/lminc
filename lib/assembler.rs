@@ -275,17 +275,37 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 }
             }
             "DAT" => {
-                // If a number was not provided, error
-                if let Some(num_str) = addr_var {
-                    if let Ok(num) = num_str.parse::<u16>() {
-                        if num > 999 {
-                            return Err(Error::InvalidNumber(i + 1, num_str.to_owned()));
+                if let Some(var) = addr_var {
+                    // Check if var is a number, if there's a variable there, use the address there
+                    // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
+                    let number: u16 = if DECIMAL_NUMBER.is_match(var) {
+                        // Parse the text as a number, checking if it is out of bounds
+                        if let Ok(var_addr) = var.parse::<u16>() {
+                            if var_addr > 999 {
+                                return Err(Error::InvalidNumber(i + 1, var.to_owned()));
+                            }
+
+                            var_addr
+                        } else {
+                            return Err(Error::InvalidNumber(i + 1, var.to_owned()));
+                        }
+                    } else if let Some(&var_addr) = variables.get(var) {
+                        var_addr as u16
+                    } else {
+                        // Get the next avaliable memory address, checking if it is out of bounds
+                        let var_addr = code.len() + variables_number;
+                        if var_addr > 99 {
+                            return Err(Error::TooManyVariables(i + 1, var.to_owned()));
                         }
 
-                        memory[i] = num;
-                    } else {
-                        return Err(Error::InvalidNumber(i + 1, num_str.to_owned()));
-                    }
+                        // Set the variable
+                        variables.insert(var, var_addr);
+                        variables_number += 1;
+
+                        var_addr as u16
+                    };
+                    
+                    memory[i] = number;
                 } else {
                     return Err(Error::ExpectedNumber(i + 1));
                 }
