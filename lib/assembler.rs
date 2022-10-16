@@ -183,12 +183,10 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
         }
 
         // If there is an instruction, unpack it, otherwise error
-        let inst: &str;
-        if let Some(some_inst) = inst_opt {
-            inst = some_inst;
-        } else {
-            return Err(Error::NoInstruction(i + 1));
-        }
+        let inst = match inst_opt {
+            Some(inst) => inst,
+            None => return Err(Error::NoInstruction(i + 1))
+        };
 
         // If there is a line_var, set it
         if let Some(var) = line_var {
@@ -210,55 +208,52 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
 
     for (i, &(inst, addr_var)) in code.iter().enumerate() {
         // Match the instruction with one with or without an address, or error
-        match inst {
+        memory[i] = match inst {
             instructionPatternWithAddress!() => {
                 // Unpack the address from the address variable, or error
-                if let Some(var) = addr_var {
-                    // Set the opcode
-                    let opcode = match inst {
-                        "ADD" => 100,
-                        "SUB" => 200,
-                        "STO" | "STA" => 300,
-                        "LDA" => 500,
-                        "BR" | "BRA" => 600,
-                        "BRZ" => 700,
-                        "BRP" => 800,
-                        _ => 000,
-                    };
+                let var = match addr_var {
+                    Some(var) => var,
+                    None => return Err(Error::ExpectedAddress(i + 1))
+                };
+                
+                // Set the opcode
+                let opcode = match inst {
+                    "ADD" => 100,
+                    "SUB" => 200,
+                    "STO" | "STA" => 300,
+                    "LDA" => 500,
+                    "BR" | "BRA" => 600,
+                    "BRZ" => 700,
+                    "BRP" => 800,
+                    _ => 000,
+                };
 
-                    // Get the address from the address variable, if it's not a number and creating one if it does not exist
-                    // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
-                    let addr: u16 = if DECIMAL_NUMBER.is_match(var) {
-                        // Parse the text as a number, checking if it is out of bounds
-                        if let Ok(var_addr) = var.parse::<u16>() {
-                            if var_addr > 99 {
-                                return Err(Error::InvalidAddress(i + 1, var.to_owned()));
-                            }
-
-                            var_addr
-                        } else {
-                            return Err(Error::InvalidAddress(i + 1, var.to_owned()));
-                        }
-                    } else if let Some(&var_addr) = variables.get(var) {
-                        var_addr as u16
-                    } else {
-                        // Get the next avaliable memory address, checking if it is out of bounds
-                        let var_addr = code.len() + variables_number;
-                        if var_addr > 99 {
-                            return Err(Error::TooManyVariables(i + 1, var.to_owned()));
-                        }
-
-                        // Set the variable
-                        variables.insert(var, var_addr);
-                        variables_number += 1;
-
-                        var_addr as u16
-                    };
-
-                    memory[i] = opcode + addr as u16;
+                // Get the address from the address variable, if it's not a number and creating one if it does not exist
+                // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
+                let addr: u16 = if DECIMAL_NUMBER.is_match(var) {
+                    // Parse the text as a number, checking if it is out of bounds
+                    match var.parse::<u16>() {
+                        Ok(var_addr) if var_addr > 99 => return Err(Error::InvalidAddress(i + 1, var.to_owned())),
+                        Ok(var_addr) => var_addr,
+                        _ => return Err(Error::InvalidAddress(i + 1, var.to_owned()))
+                    }
+                } else if let Some(&var_addr) = variables.get(var) {
+                    var_addr as u16
                 } else {
-                    return Err(Error::ExpectedAddress(i + 1));
-                }
+                    // Get the next avaliable memory address, checking if it is out of bounds
+                    let var_addr = code.len() + variables_number;
+                    if var_addr > 99 {
+                        return Err(Error::TooManyVariables(i + 1, var.to_owned()));
+                    }
+
+                    // Set the variable
+                    variables.insert(var, var_addr);
+                    variables_number += 1;
+
+                    var_addr as u16
+                };
+
+                opcode + addr as u16
             }
             instructionPatternWithoutAddress!() => {
                 // If an address variable was provided, error
@@ -267,7 +262,7 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 }
 
                 // Get the instruction code
-                memory[i] = match inst {
+                match inst {
                     "IN" | "INP" => 901,
                     "OUT" => 902,
                     "HLT" => 000,
@@ -275,40 +270,37 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 }
             }
             "DAT" => {
-                if let Some(var) = addr_var {
-                    // Check if var is a number, if there's a variable there, use the address there
-                    // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
-                    let number: u16 = if DECIMAL_NUMBER.is_match(var) {
-                        // Parse the text as a number, checking if it is out of bounds
-                        if let Ok(var_addr) = var.parse::<u16>() {
-                            if var_addr > 999 {
-                                return Err(Error::InvalidNumber(i + 1, var.to_owned()));
-                            }
-
-                            var_addr
-                        } else {
-                            return Err(Error::InvalidNumber(i + 1, var.to_owned()));
-                        }
-                    } else if let Some(&var_addr) = variables.get(var) {
-                        var_addr as u16
-                    } else {
-                        // Get the next avaliable memory address, checking if it is out of bounds
-                        let var_addr = code.len() + variables_number;
-                        if var_addr > 99 {
-                            return Err(Error::TooManyVariables(i + 1, var.to_owned()));
-                        }
-
-                        // Set the variable
-                        variables.insert(var, var_addr);
-                        variables_number += 1;
-
-                        var_addr as u16
-                    };
-                    
-                    memory[i] = number;
+                let var = match addr_var {
+                    Some(var) => var,
+                    None => return Err(Error::ExpectedNumber(i + 1))
+                };
+                
+                // Check if var is a number, if there's a variable there, use the address there
+                // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
+                let number: u16 = if DECIMAL_NUMBER.is_match(var) {
+                    // Parse the text as a number, checking if it is out of bounds
+                    match var.parse::<u16>() {
+                        Ok(var_addr) if var_addr > 999 => return Err(Error::InvalidNumber(i + 1, var.to_owned())),
+                        Ok(var_addr) => var_addr,
+                        Err(_) => return Err(Error::InvalidNumber(i + 1, var.to_owned()))
+                    }
+                } else if let Some(&var_addr) = variables.get(var) {
+                    var_addr as u16
                 } else {
-                    return Err(Error::ExpectedNumber(i + 1));
-                }
+                    // Get the next avaliable memory address, checking if it is out of bounds
+                    let var_addr = code.len() + variables_number;
+                    if var_addr > 99 {
+                        return Err(Error::TooManyVariables(i + 1, var.to_owned()));
+                    }
+
+                    // Set the variable
+                    variables.insert(var, var_addr);
+                    variables_number += 1;
+
+                    var_addr as u16
+                };
+                
+                number
             }
             "INA" | "OTA" if memory[0] == 10 => {
                 // Extended mode instructions
@@ -317,7 +309,7 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                     return Err(Error::UnexpectedAddress(i + 1, var.to_owned()));
                 }
 
-                memory[i] = match inst {
+                match inst {
                     "INA" => 911,
                     "OTA" => 912,
                     _ => 000
