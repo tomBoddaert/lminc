@@ -1,7 +1,13 @@
-#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::perf, clippy::cargo)]
+#![warn(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::perf,
+    clippy::cargo
+)]
 
 use lminc::{assembler, loader, runner};
-use std::{env, fs};
+use std::{env, fs, io::BufRead};
 
 macro_rules! HELP_TEXT {
     () => {
@@ -28,6 +34,9 @@ Subcommands:
 
     memDump <path>
         Read the memory from a binary file and print it out
+        
+    test <test path> <bin path>
+        Run the tests in the CSV file
 
     author
         Information about the author
@@ -63,6 +72,7 @@ macro_rules! read_and_assemble {
 }
 
 /// Run the command line mode
+#[allow(clippy::too_many_lines)]
 pub fn main() -> Result<(), String> {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -177,6 +187,52 @@ pub fn main() -> Result<(), String> {
                 };
 
                 println!("{memory:?}");
+            }
+            "test" => {
+                // If there are not enough arguments, error
+                check_arguments!(4, "Usage: '{} test <test path> <bin path>'");
+
+                // Read the CSV file
+                let file = match fs::File::open(&args[2]) {
+                    Ok(file) => file,
+                    Err(err) => return Err(err.to_string()),
+                };
+
+                // Create a vector of names and tests
+                let mut tests: Vec<(String, runner::Tester)> = Vec::new();
+
+                // For each line of csv:
+                for line in std::io::BufReader::new(file).lines() {
+                    match line {
+                        // Create a test from the line and add it to the tests
+                        Ok(line) => tests.push(match runner::Tester::from_csv_line(&line) {
+                            Ok(test) => test,
+                            Err(err) => return Err(err),
+                        }),
+                        Err(err) => return Err(err.to_string()),
+                    }
+                }
+
+                // Read the memory from the file
+                let memory: [u16; 100] = match loader::read_from_file(&args[3]) {
+                    Ok(Ok(memory_from_file)) => memory_from_file,
+                    Ok(Err(err)) => return Err(err.to_string()),
+                    Err(err) => return Err(err.to_string()),
+                };
+
+                // Initialise the computer
+                let mut computer = runner::Computer::new(memory);
+
+                for (name, tester) in tests {
+                    // Reset the computer and run each test
+                    computer.reset();
+                    computer.tester = Some(Box::new(tester));
+                    if let Err(err) = runner::run(&mut computer) {
+                        return Err(format!("Test '{name}': {}", err));
+                    }
+                }
+
+                println!("All tests run successfully!");
             }
             "author" => {
                 print!(AUTHOR_TEXT!());

@@ -23,7 +23,7 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Error::*;
-        
+
         match self {
             TooManyLines => write!(f, "The input file has too many lines of instructions (>100)!")?,
             MultipleInstructions(i, inst) => write!(f, "Instruction line {i} has multiple instructions ('{inst}')!")?,
@@ -39,15 +39,15 @@ impl std::fmt::Display for Error {
             UnexpectedAddress(i, variable) => write!(f, "The address variable '{variable}' on instruction line {i} was not expected!")?,
             TooManyVariables(i, variable) => write!(f, "The input file contains too many variables (variable '{variable}', instruction line {i})!")?
         }
-        
+
         Ok(())
     }
 }
 
 lazy_static! {
-    static ref NUMBER_REGEX: Regex = Regex::new(r"(?:^|\n)[ \t\d]+").unwrap();
-    static ref ASSEMBLY_REGEX: Regex = Regex::new(r"(?:^|\n)[ \ta-zA-Z\d_]+").unwrap();
-    static ref DECIMAL_NUMBER: Regex = Regex::new(r"^\d+$").unwrap();
+    pub static ref NUMBER_REGEX: Regex = Regex::new(r"(?:^|\n)[ \t\d]+").unwrap();
+    pub static ref ASSEMBLY_REGEX: Regex = Regex::new(r"(?:^|\n)[ \ta-zA-Z\d_]+").unwrap();
+    pub static ref DECIMAL_NUMBER: Regex = Regex::new(r"^\d+$").unwrap();
 }
 
 /// Takes a &str with instructions as 3 digit numbers, seperated by
@@ -180,15 +180,15 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
         // If there is an instruction, unpack it, otherwise error
         let inst = match inst_opt {
             Some(inst) => inst,
-            None => return Err(Error::NoInstruction(i + 1))
+            None => return Err(Error::NoInstruction(i + 1)),
         };
 
         // If there is a line_var, set it
         if let Some(var) = line_var {
             if DECIMAL_NUMBER.is_match(var) {
-                return Err(Error::InvalidVariable(i + 1, var.to_owned()))
+                return Err(Error::InvalidVariable(i + 1, var.to_owned()));
             }
-            
+
             if variables.contains_key(&var) {
                 return Err(Error::MultipleAssignment(i + 1, var.to_owned()));
             }
@@ -208,9 +208,9 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 // Unpack the address from the address variable, or error
                 let var = match addr_var {
                     Some(var) => var,
-                    None => return Err(Error::ExpectedAddress(i + 1))
+                    None => return Err(Error::ExpectedAddress(i + 1)),
                 };
-                
+
                 // Set the opcode
                 let opcode = match inst {
                     "ADD" => 100,
@@ -228,9 +228,11 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
                 let addr: u16 = if DECIMAL_NUMBER.is_match(var) {
                     // Parse the text as a number, checking if it is out of bounds
                     match var.parse::<u16>() {
-                        Ok(var_addr) if var_addr > 99 => return Err(Error::InvalidAddress(i + 1, var.to_owned())),
+                        Ok(var_addr) if var_addr > 99 => {
+                            return Err(Error::InvalidAddress(i + 1, var.to_owned()))
+                        }
                         Ok(var_addr) => var_addr,
-                        _ => return Err(Error::InvalidAddress(i + 1, var.to_owned()))
+                        _ => return Err(Error::InvalidAddress(i + 1, var.to_owned())),
                     }
                 } else if let Some(&var_addr) = variables.get(var) {
                     var_addr as u16
@@ -267,17 +269,19 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
             "DAT" => {
                 let var = match addr_var {
                     Some(var) => var,
-                    None => return Err(Error::ExpectedNumber(i + 1))
+                    None => return Err(Error::ExpectedNumber(i + 1)),
                 };
-                
+
                 // Check if var is a number, if there's a variable there, use the address there
                 // Checking with regex before attempting to parse to catch numbers that woule be too large for a u16
                 let number: u16 = if DECIMAL_NUMBER.is_match(var) {
                     // Parse the text as a number, checking if it is out of bounds
                     match var.parse::<u16>() {
-                        Ok(var_addr) if var_addr > 999 => return Err(Error::InvalidNumber(i + 1, var.to_owned())),
+                        Ok(var_addr) if var_addr > 999 => {
+                            return Err(Error::InvalidNumber(i + 1, var.to_owned()))
+                        }
                         Ok(var_addr) => var_addr,
-                        Err(_) => return Err(Error::InvalidNumber(i + 1, var.to_owned()))
+                        Err(_) => return Err(Error::InvalidNumber(i + 1, var.to_owned())),
                     }
                 } else if let Some(&var_addr) = variables.get(var) {
                     var_addr as u16
@@ -294,7 +298,7 @@ pub fn assemble_from_assembly(text: &str) -> Result<[u16; 100], Error> {
 
                     var_addr as u16
                 };
-                
+
                 number
             }
             _ => return Err(Error::InvalidInstruction(i + 1, inst.to_owned())),
@@ -335,13 +339,12 @@ mod test {
         let assembly = include_str!("fib.txt");
         let memory = assemble_from_assembly(assembly).unwrap();
         let expected_memory: [u16; 100] = [
-            512, 113, 902, 315, 513, 312, 515, 313, 514, 215, 800, 000, 000, 001, 100, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000,
+            512, 113, 902, 315, 513, 312, 515, 313, 514, 215, 800, 000, 000, 001, 100, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
         ];
 
         assert!(
@@ -358,13 +361,12 @@ mod test {
         let assembly = include_str!("abs_addr.txt");
         let memory = assemble_from_assembly(assembly).unwrap();
         let expected_memory: [u16; 100] = [
-            509, 398, 109, 399, 598, 902, 599, 902, 000, 001, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000,
+            509, 398, 109, 399, 598, 902, 599, 902, 000, 001, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
         ];
 
         assert!(
@@ -404,13 +406,12 @@ mod test {
         let memory = assemble_from_numbers(numbers).unwrap();
 
         let expected_memory: [u16; 100] = [
-            605, 000, 001, 000, 100, 501, 102, 902, 303, 502, 301, 503, 302, 204, 816, 605,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
-            000, 000, 000, 000,
+            605, 000, 001, 000, 100, 501, 102, 902, 303, 502, 301, 503, 302, 204, 816, 605, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+            000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
         ];
 
         assert!(
