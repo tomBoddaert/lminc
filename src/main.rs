@@ -222,17 +222,36 @@ pub fn main() -> Result<(), String> {
 
                 // Initialise the computer
                 let mut computer = runner::Computer::new(memory);
+                let mut failed = 0;
 
                 for (name, tester) in tests {
+                    println!("Running test '{name}':");
+                    
                     // Reset the computer and run each test
                     computer.reset();
                     computer.tester = Some(Box::new(tester));
+                    
+                    // Check for errors from the computer and tester
                     if let Err(err) = runner::run(&mut computer) {
-                        return Err(format!("Test '{name}': {}", err));
+                        println!("  Error: {err}");
+                        failed += 1;
+                    } else {
+                        println!("  Test ran successfully.");
+                        println!("  Program {}", computer.state);
+                    }
+                    
+                    // Print the number of cycles 
+                    if let Some(tester) = &computer.tester {
+                        println!("  Program stopped after {} fetch-execute cycles.\n", tester.fe_cycles);
                     }
                 }
 
-                println!("All tests run successfully!");
+                // Print successful
+                if failed == 0 {
+                    println!("All tests run successfully!");
+                } else {
+                    println!("{failed} tests failed!");
+                }
             }
             "author" => {
                 print!(AUTHOR_TEXT!());
