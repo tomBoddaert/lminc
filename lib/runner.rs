@@ -37,10 +37,12 @@ impl Computer {
 
     /// Resets the computer but not the memory
     pub fn reset(&mut self) {
+        self.state = ComputerState::Running;
         self.counter = 0;
         self.register = 0;
         self.negative_flag = false;
-        self.state = ComputerState::Running;
+        self.extended_mode = false;
+        self.tester = None;
     }
 }
 
@@ -291,19 +293,16 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
         }
         1 => {
             // ADD
-            computer.register = computer
-                .register
-                .wrapping_add(computer.memory[(instruction % 100) as usize])
-                % 1000;
+            computer.register =
+                (computer.register + computer.memory[(instruction % 100) as usize]) % 1000;
         }
         2 => {
             // SUBTRACT
             computer.negative_flag =
                 computer.register < computer.memory[(instruction % 100) as usize];
-            computer.register = computer
-                .register
-                .wrapping_sub(computer.memory[(instruction % 100) as usize])
-                % 1000;
+            computer.register = ((computer.register as i16
+                - computer.memory[(instruction % 100) as usize] as i16)
+                % 1000) as u16;
         }
         3 => {
             // STORE
