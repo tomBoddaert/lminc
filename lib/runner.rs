@@ -170,7 +170,7 @@ impl Tester {
 pub enum TesterError {
     NoTesterAttatched,
     RunOutOfInputs,
-    RunOutOfOutputs,
+    RunOutOfOutputs(u16),
     DifferentOutput(u16, u16),
     ExpectedMoreInputs,
     ExpectedMoreOutputs,
@@ -184,8 +184,8 @@ impl std::fmt::Display for TesterError {
         match self {
             NoTesterAttatched => write!(f, "No tester attatched!")?,
             RunOutOfInputs => write!(f, "Run out of inputs!")?,
-            RunOutOfOutputs => write!(f, "Run out of outputs!")?,
-            DifferentOutput(exp, fnd) => write!(f, "Expected {}, got {}!", exp, fnd)?,
+            RunOutOfOutputs(out) => write!(f, "Run out of outputs (did not expect {out})!")?,
+            DifferentOutput(exp, got) => write!(f, "Expected {exp}, got {got}!")?,
             ExpectedMoreInputs => write!(f, "Expected more inputs!")?,
             ExpectedMoreOutputs => write!(f, "Expected more outputs!")?,
             RunOutOfCycles => write!(f, "Run out of cycles!")?,
@@ -297,7 +297,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     // INPUT with tester
                     let mut input = match tester.inputs.pop_front() {
                         Some(input) => input,
-                        None => return Err(ComputerError::TestError(TesterError::RunOutOfInputs)),
+                        None => {
+                            // Decrement the counter and error
+                            computer.counter -= 1;
+                            return Err(ComputerError::TestError(TesterError::RunOutOfInputs));
+                        }
                     };
 
                     if input > 999 {
@@ -311,7 +315,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     // OUTPUT with tester
                     let mut expected = match tester.outputs.pop_front() {
                         Some(expected) => expected,
-                        None => return Err(ComputerError::TestError(TesterError::RunOutOfOutputs)),
+                        None => {
+                            // Decrement the counter and error
+                            computer.counter -= 1;
+                            return Err(ComputerError::TestError(TesterError::RunOutOfInputs));
+                        }
                     };
 
                     if expected > 999 {
