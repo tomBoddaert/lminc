@@ -194,8 +194,8 @@ pub enum TesterError {
     NoTesterAttatched,
     RunOutOfInputs,
     RunOutOfAInputs,
-    RunOutOfOutputs,
-    RunOutOfAOutputs,
+    RunOutOfOutputs(u16),
+    RunOutOfAOutputs(char),
     DifferentOutput(u16, u16),
     DifferentAOutput(char, char),
     ExpectedMoreInputs,
@@ -213,10 +213,12 @@ impl std::fmt::Display for TesterError {
             NoTesterAttatched => write!(f, "No tester attatched!")?,
             RunOutOfInputs => write!(f, "Run out of inputs!")?,
             RunOutOfAInputs => write!(f, "Run out of ASCII inputs!")?,
-            RunOutOfOutputs => write!(f, "Run out of outputs!")?,
-            RunOutOfAOutputs => write!(f, "Run out of ASCII outputs!")?,
-            DifferentOutput(exp, fnd) => write!(f, "Expected {}, got {}!", exp, fnd)?,
-            DifferentAOutput(exp, fnd) => write!(f, "Expected '{}', got '{}'!", exp, fnd)?,
+            RunOutOfOutputs(out) => write!(f, "Run out of outputs (did not expect {out})!")?,
+            RunOutOfAOutputs(out) => {
+                write!(f, "Run out of ASCII outputs (did not expect'{out}')!")?
+            }
+            DifferentOutput(exp, got) => write!(f, "Expected {exp}, got {got}!")?,
+            DifferentAOutput(exp, got) => write!(f, "Expected '{exp}', got '{got}'!")?,
             ExpectedMoreInputs => write!(f, "Expected more inputs!")?,
             ExpectedMoreAInputs => write!(f, "Expected more ASCII inputs!")?,
             ExpectedMoreOutputs => write!(f, "Expected more outputs!")?,
@@ -340,7 +342,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     // INPUT with tester
                     let mut input = match tester.inputs.pop_front() {
                         Some(input) => input,
-                        None => return Err(ComputerError::TestError(TesterError::RunOutOfInputs)),
+                        None => {
+                            // Decrement the counter and error
+                            computer.counter -= 1;
+                            return Err(ComputerError::TestError(TesterError::RunOutOfInputs));
+                        }
                     };
 
                     if input > 999 {
@@ -354,7 +360,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     // OUTPUT with tester
                     let mut expected = match tester.outputs.pop_front() {
                         Some(expected) => expected,
-                        None => return Err(ComputerError::TestError(TesterError::RunOutOfOutputs)),
+                        None => {
+                            return Err(ComputerError::TestError(TesterError::RunOutOfOutputs(
+                                computer.register,
+                            )))
+                        }
                     };
 
                     if expected > 999 {
@@ -372,7 +382,11 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     // ASCII INPUT (extended mode) with tester
                     let input = match tester.ainputs.pop_front() {
                         Some(input) => input,
-                        None => return Err(ComputerError::TestError(TesterError::RunOutOfAInputs)),
+                        None => {
+                            // Decrement the counter and error
+                            computer.counter -= 1;
+                            return Err(ComputerError::TestError(TesterError::RunOutOfAInputs));
+                        }
                     };
 
                     computer.register = (input as u8) as u16;
@@ -382,7 +396,9 @@ pub fn step(computer: &mut Computer) -> Result<(), ComputerError> {
                     let expected = match tester.aoutputs.pop_front() {
                         Some(expected) => expected,
                         None => {
-                            return Err(ComputerError::TestError(TesterError::RunOutOfAOutputs))
+                            return Err(ComputerError::TestError(TesterError::RunOutOfAOutputs(
+                                (computer.register as u8) as char,
+                            )))
                         }
                     };
 
