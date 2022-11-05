@@ -39,7 +39,7 @@ regex = "1.6.0"
 
 # UUID used in tests in src/loader.rs
 [dev-dependencies.uuid]
-version = "1.2.0"
+version = "1.2.1"
 features = [
   "v4",
   "fast-rng"
