@@ -9,7 +9,13 @@ The [Little Minion Computer](https://mjrbordewich.webspace.durham.ac.uk/lmc/) mo
 ### It supports the assembly in both specifications.
 [Little Minion Computer Assembly](https://mjrbordewich.webspace.durham.ac.uk/wp-content/uploads/sites/186/2021/04/LMC-Instruction-Set.pdf), [Little Man Computer](http://www.yorku.ca/sychen/research/LMC/LMCInstructions.html)
 
-## Using the CLI
+## Installing with cargo
+Make sure you have [cargo](https://rustup.rs/) installed.
+```sh
+cargo install --git https://github.com/tomboddaert/lminc
+```
+
+## Building from source
 - Use `cargo build --release` to compile the binary
 - Use `./target/release/lminc help` for instructions
 - If you want to install it, copy the binary (lminc) out of target/release/ to wherever you store your binaries (/usr/local/bin/ is recommended on Linux)
