@@ -1,13 +1,13 @@
 [package]
 name = "lminc"
-version = "1.1.4"
+version = "2.0.0"
 authors = ["Tom Boddaert <lminc@tomboddaert.com>"]
 edition = "2021"
 description = "An assembler and interpreter for the Little Minion Computer model created by Professor Magnus Bordewich of Durham University, based on the Little Man Computer created by Dr. Stuart Madnick of M.I.T. in 1965"
 readme = "README.md"
 homepage = "https://github.com/tomBoddaert/lminc/"
 repository = "https://github.com/tomBoddaert/lminc/"
-license = "Creative Commons Attribution 4.0 International"
+license = "MIT OR Apache-2.0"
 keywords = ["assembler", "utility", "binary", "compiler"]
 categories = ["simulation", "compilers"]
 
@@ -17,6 +17,19 @@ path = "lib/lib.rs"
 doc = true
 edition = "2021"
 crate-type = ["lib"]
+
+[features]
+default = ["std", "extended"]
+alloc = []
+std = ["alloc"]
+extended = []
+
+[[bin]]
+name = "lminc"
+path = "src/main.rs"
+doc = false
+edition = "2021"
+required-features = ["std"]
 
 [profile.dev]
 opt-level = 0
@@ -32,10 +45,6 @@ strip = "symbols"
 lto = "fat"
 panic = "abort"
 codegen-units = 1
-
-[dependencies]
-lazy_static = "1.4.0"
-regex = "1.6.0"
 
 # UUID used in tests in src/loader.rs
 [dev-dependencies.uuid]

@@ -1,17 +1,22 @@
-605  # Jump to line 5
-000  # Data: a (lower value)
-001  # Data: b (upper value)
-000  # Data: c (temp value)
-100  # Data: max
-501  # Load a
-102  # Add b
-902  # Output a + b
-303  # Store a + b in c
-502  # Load b
-301  # Store b in a
-503  # Load c
-302  # Store c in b
-204  # Subtract max from c
-816  # If c > max, jump to line 16
-605  # Jump to line 5 (loop)
-000  # Stop
+605     # jump to instruction 5 (line 10)
+
+# state
+000     # a (lower value)
+001     # b (upper value)
+000     # c (temp value)
+100     # max value
+
+# program
+501     # load a
+102     # add b
+902     # output and store in c
+303
+502     # load b and store in a
+301
+503     # load c and store in b
+302
+204     # subtract max
+816     # if c > max, go to instruction 16 (line 21)
+605     # go to instruction 5 (line 10) (loop)
+
+000     # stop

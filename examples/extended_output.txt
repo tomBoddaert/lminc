@@ -1,28 +1,30 @@
-      DAT 010    # Set extended mode
+      EXT               # enable extended mode
 
-loop  LDA first  # Load the current character (modified)
-      BRZ end    # If null, stop
-      OTA        # Output the character
-      LDA loop   # Load the character loading instruction
-      ADD one    # Add one to the address (not safe)
-      STO loop   # Store the modified instruction
-      BR loop    # Loop
+loop  LDA   first       # (modified) load the current character
+      BRZ   exit        # if null, stop
+      OTA               # output the character
+      LDA   loop        # load the character loading instruction
+      ADD   one         # add one to the address
+      STO   loop        # store the modified instruction
+      BR    loop        # go to the start of the loop
 
-end   HLT        # Stop
+exit  HLT               # stop
 
-one   DAT 001    # Data: one = 1
+# constants
+one   DAT   1
 
-first DAT 072    # A string of characters
-      DAT 101
-      DAT 108
-      DAT 108
-      DAT 111
-      DAT 032
-      DAT 119
-      DAT 111
-      DAT 114
-      DAT 108
-      DAT 100
-      DAT 033
-      DAT 010    # Terminated by a newline
-      HLT        # and a null
+# data
+first DAT   072         # a string of characters
+      DAT   101
+      DAT   108
+      DAT   108
+      DAT   111
+      DAT   032
+      DAT   119
+      DAT   111
+      DAT   114
+      DAT   108
+      DAT   100
+      DAT   033
+      DAT   010         # ending in a newline
+      DAT   000         # and terminated with a null (zero)

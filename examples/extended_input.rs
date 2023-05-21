@@ -1,9 +1,9 @@
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "extended"))]
 mod example {
     use lminc::{assembler, runner::stdio::Runner};
 
     /// Imported assembly
-    const ASSEMBLY: &str = include_str!("fib.txt");
+    const ASSEMBLY: &str = include_str!("extended_input.txt");
 
     pub fn main() {
         // Assemble the assembly
@@ -21,14 +21,14 @@ mod example {
     }
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(not(all(feature = "std", feature = "extended")))]
 mod example {
     pub fn main() {
-        eprintln!("To run this example, the `std` feature must be enabled!");
+        eprintln!("To run this example, the `std` and `extended` features must be enabled!");
     }
 }
 
-/// Runs the Fibonacci sequence and stops when it exceeds 100
+/// Takes an input character and a number and repeats the character that many times
 fn main() {
     example::main();
 }
