@@ -1,5 +1,4 @@
 [![Rust](https://github.com/tomBoddaert/lminc/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/tomBoddaert/lminc/actions/workflows/rust.yml)
-&nbsp; [![rust-clippy analyze](https://github.com/tomBoddaert/lminc/actions/workflows/rust-clippy.yml/badge.svg?event=push)](https://github.com/tomBoddaert/lminc/actions/workflows/rust-clippy.yml)
 
 # LMinC
 
@@ -15,16 +14,11 @@ Make sure you have [cargo](https://rustup.rs/) installed.
 cargo install --git https://github.com/tomboddaert/lminc
 ```
 
-## Building from source
-- Use `cargo build --release` to compile the binary
-- Use `./target/release/lminc help` for instructions
-- If you want to install it, copy the binary (lminc) out of target/release/ to wherever you store your binaries (/usr/local/bin/ is recommended on Linux)
-
 ## Examples
 
 ### Assembly examples
 - There is an example of assembly in [examples/fib.txt](examples/fib.txt).
-- There are an exmaple of number assembly in [examples/fib_num.txt](examples/fib_num.txt).
+- There are an example of number assembly in [examples/fib_num.txt](examples/fib_num.txt).
 
 ### Library examples
 - There is an example of assembling and running from assembly in [examples/fibonacci.rs](examples/fibonacci.rs)
@@ -35,7 +29,4 @@ cargo install --git https://github.com/tomboddaert/lminc
 I am working on an extended mode. The documentation is in [extended_mode.md](extended_mode.md).
 
 ## License
-[LMinC](https://github.com/tomBoddaert/lminc) © 2022 by [Tom Boddaert](https://tomboddaert.com/) is licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
-
-## Contact
-Email me at [lminc@tomboddaert.com](mailto:lminc@tomboddaert.com), or contact me by a different method at [tomBoddaert.com/contact](https://tomboddaert.com/contact)
+[LMinC](https://github.com/tomBoddaert/lminc) is dual-licensed under either the [Apache License Version 2.0](/server/LICENSE_APACHE) OR [MIT](/server/LICENSE_MIT) license at your option.

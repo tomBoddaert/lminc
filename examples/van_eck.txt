@@ -1,0 +1,49 @@
+loop    LDA current     # load and output the current value
+        OUT
+
+        ADD base_a      # translate that to the value's index address
+        STO c_addr
+        LDA c_addr
+
+        ADD sto_n       # make a store instruction from the index address
+        STO sto_c
+        ADD d_lda_n     # make a load instruction from the store instruction
+        STO lda_c
+
+        SUB lda_max     # make sure the index is not > 99 (not load > 599)
+        BRP exit
+
+        LDA counter     # increment the counter
+        ADD one
+        STO counter
+
+lda_c   DAT 0           # (modified) load the last index of the current value
+        BRZ update      # if zero, skip to [update]
+
+        STO c_index     # calculate counter - last index
+        LDA counter
+        SUB c_index
+
+update  STO current     # set as the next number
+
+        LDA counter     # load the counter
+sto_c   DAT 0           # (modified) store as the last index of the (old) current number
+        BR loop         # go to the start of the loop
+
+exit    HLT             # stop
+
+# state
+current DAT 0           # the current number
+counter DAT 0           # the counter
+c_addr  DAT 0           # the address of the last index of the current number
+c_index DAT 0           # (cache) the last index of the current number
+
+# constants
+one     DAT 1
+sto_n   DAT 300         # op code of STO
+d_lda_n DAT 200         # op code of LDA - op code of STO
+lda_max DAT 599         # max address + op code of LDA
+
+# base for last index storage
+base_a  DAT base        # index of the base
+base    DAT 0

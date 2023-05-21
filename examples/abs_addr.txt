@@ -1,0 +1,12 @@
+LDA one     # load 1 and store it at address 98
+STO 98
+ADD one     # add 1 and store it at address 99
+STO 99
+LDA 98      # load address 98 and output (1)
+OUT
+LDA 99      # load address 99 and output (2)
+OUT
+HLT         # stop
+
+# constants
+one DAT 1

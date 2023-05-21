@@ -1,15 +1,20 @@
-start LDA a      # Load a
-      ADD b      # Add b
-      OUT        # Output a + b
-      STO c      # Store a + b in c
-      LDA b      # Load b
-      STO a      # Store b in a
-      LDA c      # Load c
-      STO b      # Store c in b
-      LDA max    # Load max
-      SUB c      # Subtract max from c
-      BRP start  # If max > c, jump to start
-end   HLT        # Stop
-a     DAT 0      # Data: a (lower value)
-b     DAT 1      # Data: b (upper value)
-max   DAT 100    # Data: max (max value)
+start LDA a       # load a and add b
+      ADD b
+      OUT         # output and store in c
+      STO c
+      LDA b       # load b and store in a
+      STO a
+      LDA c       # load c and store in b
+      STO b
+      LDA max     # load max
+      SUB c       # subtract c from max
+      BRP start   # if max > c, jump to start
+end   HLT         # stop
+
+# state
+a     DAT 0       # lower value
+b     DAT 1       # upper value
+c     DAT 0       # temporary
+
+# constants
+max   DAT 100     # max value
