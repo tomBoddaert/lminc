@@ -1,6 +1,6 @@
 [package]
 name = "lminc"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Tom Boddaert <lminc@tomboddaert.com>"]
 edition = "2021"
 description = "An assembler and interpreter for the Little Minion Computer model created by Professor Magnus Bordewich of Durham University, based on the Little Man Computer created by Dr. Stuart Madnick of M.I.T. in 1965"

@@ -156,6 +156,7 @@ pub type ErrorWithOptionalTestName<'a> = ErrorWithLocation<ErrorWithCycles, Opti
 
 macro_rules! test_methods {
     () => {
+        #[allow(clippy::too_many_lines)]
         /// Run one step of a test.
         /// Only use this if you know what you are doing!
         /// You probably want `run` instead

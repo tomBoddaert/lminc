@@ -80,9 +80,16 @@ impl<'a> Parser<'a> {
         }
     }
 
+    #[must_use]
     /// Get the number of instructions parsed
     pub const fn len(&self) -> usize {
         self.instruction_number
+    }
+
+    #[must_use]
+    /// Returns `true` if the [Parser] has not parsed any lines
+    pub const fn is_empty(&self) -> bool {
+        self.instruction_number == 0
     }
 
     /// Parse one line of assembly into the [Parser]

@@ -19,18 +19,14 @@ jobs:
     - name: Clippy
       run: |
         cargo clippy --all-targets
-        cargo clippy --all-targets --no-default-features
-        cargo clippy --all-targets --no-default-features --features=extended
-        cargo clippy --all-targets --no-default-features --features=alloc
-        cargo clippy --all-targets --no-default-features --features=alloc,extended
+        cargo clippy --no-default-features
+        cargo clippy --no-default-features --features=extended
+        cargo clippy --no-default-features --features=alloc
+        cargo clippy --no-default-features --features=alloc,extended
         cargo clippy --all-targets --no-default-features --features=std
     - name: Build
       run: |
         cargo build --verbose
-        cargo build --verbose --no-default-features
-        cargo build --verbose --no-default-features --features=extended
-        cargo build --verbose --no-default-features --features=alloc
-        cargo build --verbose --no-default-features --features=alloc,extended
         cargo build --verbose --no-default-features --features=std
     - name: Run tests
       run: cargo test
